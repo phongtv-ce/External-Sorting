@@ -13,7 +13,7 @@
 
 using namespace std;
 
-const int MB = 1048576;
+const int MB = 1024;
 double my_rate = 0;
 
 struct HeapNode
@@ -77,6 +77,7 @@ void mergeFile(string &output_file, int num_file, long mem_size)
 
 	int i;
 
+	//push node into heap
 	for (i = 0; i < num_file; ++i)
 	{
 		HeapNode node;
@@ -98,12 +99,15 @@ void mergeFile(string &output_file, int num_file, long mem_size)
 
 	while (count != num_file)
 	{
+		// get min node from heap and write to output
 		HeapNode root = min_heap.front();
 		output << root.data << "\n";
 
+		// pop it from heap
 		pop_heap(min_heap.begin(), min_heap.end(), nodeComp);
 		min_heap.pop_back();
 
+		// push new node from file to heap
 		HeapNode node;
 		if (getline(input[root.index], node.data))
 		{
@@ -143,12 +147,17 @@ void externalSort(string &input_file, string &output_file, long mem_size)
 	int num_file = 0; // num of file to splice
 	long mem_usage = 0;
 	bool measure_rate = false;
-	long run_size = (mem_size * 0.9) / 1024; // KiB
+	long run_size = (mem_size * 0.9); // KiB
 	bool stop_flag = false;
 
 	fstream input;
 	fstream output;
 	input.open(input_file, ios::in);
+	if (input.fail())
+	{
+		cout << "File not found" << endl;
+		return;
+	}
 
 	while (!input.eof())
 	{
@@ -172,7 +181,7 @@ void externalSort(string &input_file, string &output_file, long mem_size)
 		while ((mem_usage < run_size) && getline(input, line))
 		{
 			list_data.push_back(line);
-			data_capacity += list_data.back().capacity() + sizeof(string);
+			data_capacity += list_data.back().capacity();
 
 			if (!measure_rate)
 			{
@@ -195,14 +204,20 @@ void externalSort(string &input_file, string &output_file, long mem_size)
 			my_rate = (double)mem_usage / (double)data_capacity;
 		}
 
-		cout << "size: " << mem_usage / 1024 << endl;
-		cout << "List is sorting..." << endl;
+		if (list_data.size() <= 0)
+		{
+			cout << "can't read data" << endl;
+			return;
+		}
 
-		const clock_t begin_time = clock();
+		// cout << "size: " << data_capacity / 1024 << " KiB" << endl;
+		// cout << "List is sorting..." << endl;
+
+		// const clock_t begin_time = clock();
 		list_data.sort();
 
-		cout << "Time sort: " << float(clock() - begin_time) / CLOCKS_PER_SEC << endl;
-		cout << "Sorted!" << endl;
+		// cout << "Time sort: " << float(clock() - begin_time) / CLOCKS_PER_SEC << endl;
+		// cout << "Sorted!" << endl;
 
 		if (input.eof() && num_file == 0)
 		{
@@ -241,7 +256,7 @@ void externalSort(string &input_file, string &output_file, long mem_size)
 	//merge file sorted
 	if (!stop_flag)
 	{
-		cout << "Merging tmp file to output" << endl;
+		cout << "Merging file from tmp to output" << endl;
 		mergeFile(output_file, num_file, mem_size);
 		system("rm -r ./tmp");
 	}
@@ -253,14 +268,23 @@ int main(int argc, char **args)
 	string input_file_name = "input.txt",
 		   output_file_name = "output.txt";
 
-	long mem_size = 400 * MB;
+	long mem_size = 500 * MB;
 
 	// get value from main params
 	if (argc >= 3)
 	{
-		input_file_name = string(args[0]);
-		output_file_name = string(args[1]);
-		mem_size = atoi(args[2]);
+		input_file_name = string(args[1]);
+		output_file_name = string(args[2]);
+		mem_size = atoi(args[3]);
+		cout << "Mem size: " << mem_size << "KiB" << endl;
+		cout << "Input: " << input_file_name << endl;
+		cout << "Output: " << output_file_name << endl;
+	}
+
+	if (mem_size <= 0)
+	{
+		cout << "mem size is invalid" << endl;
+		return 0;
 	}
 
 	externalSort(input_file_name, output_file_name, mem_size);
