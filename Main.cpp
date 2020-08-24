@@ -204,11 +204,13 @@ void externalSort(string &input_file, string &output_file, long mem_size)
 			my_rate = (double)mem_usage / (double)data_capacity;
 		}
 
-		//if (list_data.size() <= 0)
-		//{
-		//	cout << "can't read data" << endl;
-		//	return;
-		//}
+		if (list_data.size() <= 0 && num_file == 0)
+		{
+			cout << "empty data" << endl;
+			output.open(output_file, ios::out);
+			output.close();
+			return;
+		}
 
 		// cout << "size: " << data_capacity / 1024 << " KiB" << endl;
 		// cout << "List is sorting..." << endl;
